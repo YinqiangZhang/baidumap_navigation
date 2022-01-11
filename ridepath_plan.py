@@ -1,12 +1,13 @@
 import requests
 import json
 import sys
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
 class  RidePlaner(object):
     def  __init__(self):
+        self._local_dir = os.path.split(os.path.realpath(__file__))[0]
         self.api_key = "SIxrxBpid4EOWamRCnB0adoepHvfMrYv"
         self.header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
 
@@ -46,8 +47,10 @@ class  RidePlaner(object):
             self.api_key, center_lng, center_lat, markers_gps
         )
         image = requests.get(url, headers = self.header)
-
-        f = open('/home/sbw/baidu_map/' + 'path_rideplan' + '.png', 'wb')
+        image_path = os.path.join(self._local_dir, 'baidu_map')
+        if not os.path.exists(image_path):
+            os.makedirs(image_path)
+        f = open(os.path.join(image_path, 'path_rideplan.png'), 'wb')
         f.write(image.content)
         f.close()
 
