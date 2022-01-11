@@ -54,7 +54,10 @@ if __name__ == "__main__":
     try:
         bag_file = sys.argv[1]
     except IndexError:
-        bag_file = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'demo.bag') 
+        hku_demo_dir = 'hku_bag'
+        hku_demo_name = 'hku_demo_01.bag'
+        bag_file = os.path.join(os.path.split(os.path.realpath(__file__))[0], hku_demo_dir, hku_demo_name) 
+        
     emerisioner = PathEmersioner()
     center_lng, center_lat, markers_gps = emerisioner.obtain_path(bag_file)
     emerisioner.save_path(center_lng, center_lat, markers_gps)
