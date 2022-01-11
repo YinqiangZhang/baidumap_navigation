@@ -15,7 +15,7 @@ class PathEmersioner(object):
 
     def save_path(self, center_lng, center_lat, markers_gps):
         url = "http://api.map.baidu.com/staticimage/v2?ak={}&coordtype=wgs84ll&center={},{}&width=1000&height=1000&zoom=18&paths={}&pathStyles=0xFF0000,5,1".format(
-           self. api_key, center_lng, center_lat, markers_gps
+           self.api_key, center_lng, center_lat, markers_gps
          )
 
         image = requests.get(url, self.header)
@@ -51,7 +51,10 @@ class PathEmersioner(object):
         return center_lng, center_lat, markers_gps
 
 if __name__ == "__main__":
-    bag_file = sys.argv[1]
+    try:
+        bag_file = sys.argv[1]
+    except IndexError:
+        bag_file = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'demo.bag') 
     emerisioner = PathEmersioner()
     center_lng, center_lat, markers_gps = emerisioner.obtain_path(bag_file)
     emerisioner.save_path(center_lng, center_lat, markers_gps)
