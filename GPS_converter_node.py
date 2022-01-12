@@ -1,6 +1,4 @@
 #! /usr/bin/python
-
-import os
 import tf
 import time
 import rospy
@@ -9,9 +7,10 @@ from sensor_msgs.msg import NavSatFix
 import matplotlib.pyplot as plt
 
 class GPSReceivor():
-    def __init__(self):
+    def __init__(self, viz_enable=False):
         
         rospy.init_node("gnss_node")
+        self.viz_enable = viz_enable
         
         # earth parameters 
         self.a = 6378137.0 # Semi-major axis
@@ -37,14 +36,10 @@ class GPSReceivor():
         time.sleep(1)
     
     def run(self):
-        loop = rospy.Rate(0.5)
-        plt.ion()
+        loop = rospy.Rate(0.1)
         while not rospy.is_shutdown():
-            if len(self.coords_list) != 0:
-                temp_list = np.array(self.coords_list)
-                plt.plot(temp_list[0, :], temp_list[1, :], color='r', linewidth=1.5)
-                plt.pause(0.2)
-                plt.ioff()
+            if self.viz_enable:
+                self.draw_interactive()
             loop.sleep()
         
     def wgs84_to_ecef(self, geo_pos):
@@ -105,8 +100,19 @@ class GPSReceivor():
         quat_w2o = (0,0,0,1)
         
         self._tf_broadcaster.sendTransform(t_w2o, quat_w2o, msg.header.stamp, 'odom', 'world')
-            
+    
+    def draw_interactive(self):
+        if len(self.coords_list) != 0: 
+            temp_list = np.array(self.coords_list)
+            plt.ion()
+            plt.clf()
+            plt.plot(temp_list[:, 0], temp_list[:, 1], color='r', linewidth=1.5)
+            plt.grid(linestyle='--')
+            ax = plt.gca()
+            ax.set_aspect(1)
+            plt.pause(0.05)
+            plt.ioff()
     
 if __name__ == "__main__":
-    GPS_node = GPSReceivor()
+    GPS_node = GPSReceivor(viz_enable=True)
     GPS_node.run()
