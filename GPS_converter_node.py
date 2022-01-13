@@ -1,9 +1,9 @@
 #! /usr/bin/python
-import tf
 import time
 import rospy
 import numpy as np
-from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import NavSatFix, Imu
+from std_srvs.srv import Empty
 import matplotlib.pyplot as plt
 
 class GPSReceivor():
@@ -21,17 +21,17 @@ class GPSReceivor():
         # initial geodetic coordinates
         self.ref_geo_pos = NavSatFix()
         self.ref_ecef = np.zeros((3,))
-        # TODO: a rosservice can be written here for setting origin adaptively 
         self.set_initial_position = False
         
         # gnss subscriber and publisher
         self._gnss_sub = rospy.Subscriber('/ublox_gps/fix', NavSatFix, self._gnss_cb)
-        
-        # tf
-        self._tf_broadcaster = tf.TransformBroadcaster()
+        self._gnss_reset_srv = rospy.Service('/gnss_reset_srv', Empty, self._reinit_origin, buff_size=10)
         
         # result list
-        self.coords_list = list()
+        self.path = list()
+
+        # world to odom pose
+        self.t_w2o = (0, 0, 0)
         
         time.sleep(1)
     
@@ -87,26 +87,31 @@ class GPSReceivor():
             self.ref_geo_pos = msg
             self.ref_ecef = self.wgs84_to_ecef(self.ref_geo_pos)
             self.set_initial_position = True
+            rospy.loginfo('Set origin successfully!')
         
         current_enu = self.get_enu_position(msg)
-        rospy.loginfo('E:{},N:{},U:{}'.format(current_enu[0], current_enu[1], current_enu[2]))
+        # rospy.loginfo('E:{},N:{},U:{}'.format(current_enu[0], current_enu[1], current_enu[2]))
         
-        self.coords_list.append([current_enu[0], current_enu[1]])
+        self.path.append([current_enu[0], current_enu[1]])
 
         # remove z coordinate
-        t_w2o = (current_enu[0],
-                 current_enu[1],
-                 0.0)
-        quat_w2o = (0,0,0,1)
+        self.t_w2o = (current_enu[0], current_enu[1], 0.0)
         
-        self._tf_broadcaster.sendTransform(t_w2o, quat_w2o, msg.header.stamp, 'odom', 'world')
+    def _reinit_origin(self, srv):
+        """
+            service handler of the GNSS origin (reference)
+        """
+        self.set_initial_position = False
+        rospy.loginfo("Reset flag to zero and waiting for new gnss data...")
+
+        return []
     
     def draw_interactive(self):
-        if len(self.coords_list) != 0: 
-            temp_list = np.array(self.coords_list)
+        if len(self.path) != 0: 
+            np_path_list = np.array(self.path)
             plt.ion()
             plt.clf()
-            plt.plot(temp_list[:, 0], temp_list[:, 1], color='r', linewidth=1.5)
+            plt.plot(np_path_list[:, 0], np_path_list[:, 1], color='r', linewidth=1.5)
             plt.grid(linestyle='--')
             ax = plt.gca()
             ax.set_aspect(1)
@@ -114,5 +119,5 @@ class GPSReceivor():
             plt.ioff()
     
 if __name__ == "__main__":
-    GPS_node = GPSReceivor(viz_enable=True)
+    GPS_node = GPSReceivor(viz_enable=False)
     GPS_node.run()
