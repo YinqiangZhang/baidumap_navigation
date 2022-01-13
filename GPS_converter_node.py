@@ -1,4 +1,5 @@
 #! /usr/bin/python
+import tf
 import time
 import rospy
 import numpy as np
@@ -26,9 +27,19 @@ class GPSReceivor():
         # gnss subscriber and publisher
         self._gnss_sub = rospy.Subscriber('/ublox_gps/fix', NavSatFix, self._gnss_cb)
         self._gnss_reset_srv = rospy.Service('/gnss_reset_srv', Empty, self._reinit_origin, buff_size=10)
+
+        # IMU subscriber
+        self._imu_sub = rospy.Subscriber('/imu/data', Imu, self._imu_cb)
+
+        # tf
+        self._tf_boardcaster = tf.TransformBroadcaster()
         
         # result list
         self.path = list()
+
+        # world to odom pose
+        self.t_w2o = (0, 0, 0)
+        self.q_w2o = (0, 0, 0, 1)
         
         time.sleep(1)
     
@@ -91,12 +102,22 @@ class GPSReceivor():
         
         self.path.append([current_enu[0], current_enu[1]])
 
-        # remove z coordinate
-        t_w2o = (current_enu[0],
-                 current_enu[1],
-                 0.0)
-        quat_w2o = (0,0,0,1)
-        
+        # remove z coordinate and give translation assignment
+        self.t_w2o = (current_enu[0], current_enu[1], 0.0)
+
+        self._tf_boardcaster.sendTransform(self.t_w2o, self.q_w2o, msg.header.stamp, 'dodm', 'world')
+    
+    def _imu_cb(self, msg):
+        """
+            subscribe the imu message (if necessary)
+        """
+        orientation = msg.orientation
+        q_w2o = (orientation.x,
+                    orientation.y,
+                    orientation.z,
+                    orientation.w)
+        self.q_w2o = q_w2o
+
     def _reinit_origin(self, srv):
         """
             service handler of the GNSS origin (reference)
@@ -119,5 +140,5 @@ class GPSReceivor():
             plt.ioff()
     
 if __name__ == "__main__":
-    GPS_node = GPSReceivor(viz_enable=True)
+    GPS_node = GPSReceivor(viz_enable=False)
     GPS_node.run()
