@@ -60,12 +60,10 @@ class GPSReceivor():
         alt = geo_pos.altitude
         
         # intermidate results
-        temp = np.sqrt(1 + (1-self.e_square)* np.square(np.tan(lon)))
-        temp2 = np.sqrt(1-self.e_square*np.square(np.sin(lat))) 
-        
-        x = (self.a * np.cos(lon)) / temp + alt*np.cos(lon)*np.cos(lat)
-        y = (self.a * np.sin(lon)) / temp + alt*np.sin(lon)*np.sin(lat)
-        z = (self.a * (1-self.e_square) * np.sin(lat)) / temp2 + alt*np.sin(lat)
+        N = self.a/np.sqrt(1 - self.e_square*np.sin(lat)*np.sin(lat))
+        x = (N + alt)*np.cos(lat)*np.cos(lon)
+        y = (N + alt)*np.cos(lat)*np.sin(lon)
+        z = ((1-self.e_square)*N + alt)*np.sin(lat)
 
         return np.array([x, y, z])
     
@@ -77,7 +75,7 @@ class GPSReceivor():
         ref_lon = self.ref_geo_pos.longitude * np.pi /180.0
         ref_lat = self.ref_geo_pos.latitude * np.pi /180.0
         
-        ref_R = np.array([[-np.sin(ref_lon), np.cos(ref_lat), 0], 
+        ref_R = np.array([[-np.sin(ref_lon), np.cos(ref_lon), 0], 
                       [-np.sin(ref_lat)*np.cos(ref_lon), -np.sin(ref_lat)*np.sin(ref_lon), np.cos(ref_lat)], 
                       [np.cos(ref_lat)*np.cos(ref_lon), np.cos(ref_lat)*np.sin(ref_lon), np.sin(ref_lat)]])
         
@@ -140,5 +138,5 @@ class GPSReceivor():
             plt.ioff()
     
 if __name__ == "__main__":
-    GPS_node = GPSReceivor(viz_enable=False)
+    GPS_node = GPSReceivor(viz_enable=True)
     GPS_node.run()
