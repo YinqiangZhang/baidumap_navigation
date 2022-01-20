@@ -55,8 +55,16 @@ class  RidePlaner(object):
         f.close()
 
 if __name__ == "__main__":
-    origin_gps = '22.60808431791728,114.00273340573993'
-    destination_gps = '22.599153684226555,114.00588269527528'
+    # origin_gps = '22.60808431791728,114.00273340573993'
+    # destination_gps = '22.599153684226555,114.00588269527528'
+    
+    # data on the map
+    # origin_gps = '22.287783,114.149596' # 22.287783,114.149596
+    # destination_gps = '22.287081,114.150763' # 22.287081,114.150763
+    
+    # data from GPS 
+    origin_gps = '22.2844866,114.1381188'
+    destination_gps = '22.2835193,114.1381264'
     
     planner = RidePlaner()
     center_lng, center_lat, markers_gps = planner.calculate_path(origin_gps, destination_gps)
