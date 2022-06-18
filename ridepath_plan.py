@@ -24,11 +24,14 @@ class  RidePlaner(object):
         transformed_path_destination_gps = '{},{}'.format(path_destination_dir['lng'], path_destination_dir['lat'])
         
         origin_lngs, origin_lats = [], []
+        markers_gps = ''
         markers_gps = '{};'.format(transformed_path_origin_gps)
         for i in range(len(html_dir)):
             step_info = html_dir[i]
             origin_lng = step_info['stepOriginLocation']['lng']
             origin_lat = step_info['stepOriginLocation']['lat']
+            # TODO: add transform from bd09 to wgs84
+            # origin_lng, origin_lat = bd09_to_wgs84(origin_lng, origin_lat)
             origin_lngs.append(origin_lng)
             origin_lats.append(origin_lat)
             markers_gps += str(origin_lng)
@@ -37,18 +40,20 @@ class  RidePlaner(object):
             markers_gps += ';'
             paths = step_info['path'].split(';')[1: -1]
             for j in range(len(paths)):
+                # lng, lat = bd09_to_wgs84(float(paths[j].split(',')[1]), float(paths[j].split(',')[0]))
                 markers_gps += paths[j]
+                # markers_gps += '{},{}'.format(lat,lng)
                 markers_gps += ';'
 
-        # TODO: test different value of origin and destination in the output results
         markers_gps += transformed_path_destination_gps
+        # markers_gps += destination_gps.split(',')[1] + ',' + destination_gps.split(',')[0]
         center_lng = np.mean(np.array(origin_lngs))
         center_lat = np.mean(np.array(origin_lats))
 
         return center_lng, center_lat, markers_gps
     
     def save_path(self, center_lng, center_lat, markers_gps):
-        url = "http://api.map.baidu.com/staticimage/v2?ak={}&center={},{}&width=1000&height=1000&zoom=17&paths={}&pathStyles=0xFF0000,5,1".format(
+        url = "http://api.map.baidu.com/staticimage/v2?ak={}&center={},{}&width=1000&height=1000&zoom=18&paths={}&pathStyles=0xFF0000,5,1".format(
             self.api_key, center_lng, center_lat, markers_gps
         )
         image = requests.get(url, headers = self.header)
@@ -65,8 +70,15 @@ if __name__ == "__main__":
     
     # data from GPS 
     # For inputs, WGS84 coordinate is necessary here
-    origin_gps = '22.284486,114.138118'
-    destination_gps = '22.283519,114.138126'
+    # origin_gps = '22.284486,114.138118' 
+    # destination_gps = '22.283519,114.138126'
+    
+    # data from Baidu Map (SUST) 
+    # origin_gps = '22.600639,114.008534'
+    # destination_gps = '22.60808431791728,114.00273340573993' # '22.603759,114.004423'
+    
+    origin_gps = '22.2844866,114.1381188'
+    destination_gps = '22.2835301,114.1391492'
     
     planner = RidePlaner()
     center_lng, center_lat, markers_gps = planner.calculate_path(origin_gps, destination_gps)
